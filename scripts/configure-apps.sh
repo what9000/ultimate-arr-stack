@@ -178,7 +178,10 @@ if $SABNZBD_RUNNING; then
     fi
 fi
 
-# qBittorrent password (env var preserved from globals, try docker logs as fallback)
+# qBittorrent password: env var → .env file → docker logs temp password
+if [[ -z "$QBIT_PASSWORD" && -f .env ]]; then
+    QBIT_PASSWORD=$(grep '^QBIT_PASSWORD=' .env 2>/dev/null | head -1 | cut -d= -f2- || true)
+fi
 if [[ -z "$QBIT_PASSWORD" ]]; then
     QBIT_PASSWORD=$(docker logs qbittorrent 2>&1 | grep -oP 'temporary password is provided.*: \K\S+' | tail -1 || true)
 fi
