@@ -19,6 +19,7 @@ volumes:
   radarr-config:
   jellyfin-config:
   jellyfin-cache:
+  plex-config:
   seerr-config:
   bazarr-config:
   pihole-etc-pihole:
@@ -287,7 +288,40 @@ services:
       timeout: 30s
       retries: 2
       start_period: 30s
-
+      
+  # ═══════════════════════════════════════════════════════════════════════════
+  # PLEX - Media server. Stream your movies and TV shows like Netflix.
+  # Access: plex.lan | plex.yourdomain.com | NAS_IP:32400
+  # ═══════════════════════════════════════════════════════════════════════════
+  plex:
+    image: lscr.io/linuxserver/plex:latest
+    container_name: plex
+    ports:
+      - "32400:32400"
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - VERSION=docker
+      - PLEX_CLAIM=${PLEX_CLAIM}  # Get from https://plex.tv/claim (expires in 4 mins)
+    # Hardware transcoding (Intel Quick Sync) - remove if no Intel GPU
+    devices:
+      - /dev/dri:/dev/dri
+    volumes:
+      - plex-config:/config
+      - ${MEDIA_ROOT}/movies:/media/movies:ro
+      - ${MEDIA_ROOT}/tv:/media/tv:ro
+    networks:
+      arr-stack:
+        ipv4_address: 172.20.0.11
+    restart: always
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:32400/identity"]
+      interval: 1m
+      timeout: 30s
+      retries: 2
+      start_period: 30s
   # ═══════════════════════════════════════════════════════════════════════════
   # PI-HOLE - DNS server. Enables .lan domains and blocks ads network-wide.
   # Access: pihole.lan/admin | NAS_IP:8081/admin
